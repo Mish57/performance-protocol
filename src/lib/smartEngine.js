@@ -10,6 +10,15 @@ function safeNumber(value, fallback = 0) {
   return Number.isFinite(numeric) ? numeric : fallback;
 }
 
+function parseRepTarget(value, fallback = 0) {
+  const match = String(value ?? "").match(/\d+/);
+  if (!match) {
+    return fallback;
+  }
+  const parsed = Number(match[0]);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function getRecentDateKeys(referenceDate, days) {
   const keys = [];
   for (let index = 0; index < days; index += 1) {
@@ -143,6 +152,156 @@ function getCompletionPercent(day, log) {
   const tasks = log?.tasks ?? {};
   const done = required.filter((taskId) => Boolean(tasks[taskId])).length;
   return required.length ? Math.round((done / required.length) * 100) : 0;
+}
+
+function getDietFromLog(log) {
+  return {
+    breakfast: Boolean(log?.diet?.breakfast),
+    lunch: Boolean(log?.diet?.lunch),
+    dinner: Boolean(log?.diet?.dinner),
+  };
+}
+
+export function getDietScoreFromLog(log) {
+  const diet = getDietFromLog(log);
+  const completedCount = [diet.breakfast, diet.lunch, diet.dinner].filter(Boolean).length;
+  return Math.round((completedCount / 3) * 100);
+}
+
+export function getDietFeedback(dietScore) {
+  if (dietScore >= 100) {
+    return "Excellent nutrition consistency today.";
+  }
+  if (dietScore >= 67) {
+    return "Good nutrition progress. One more meal check-in to hit 100%.";
+  }
+  if (dietScore >= 50) {
+    return "Solid baseline. Keep meals consistent for better recovery.";
+  }
+  return "Nutrition is low today. Prioritize protein and complete core meals.";
+}
+
+export function getAdaptiveDayMode({ sleepHours, yesterdayWorkout, dietScore }) {
+  const sleep = safeNumber(sleepHours, 0);
+  const hadPoorSleep = sleep > 0 && sleep < 6;
+  const missedYesterday = !yesterdayWorkout;
+  const lowDiet = safeNumber(dietScore, 0) < 50;
+
+  if (hadPoorSleep || missedYesterday || lowDiet) {
+    return "RECOVERY";
+  }
+  if (sleep >= 7 && yesterdayWorkout && safeNumber(dietScore, 0) >= 50) {
+    return "PUSH";
+  }
+  return "NORMAL";
+}
+
+export function getAdaptiveBanner(mode) {
+  if (mode === "PUSH") {
+    return {
+      tone: "success",
+      title: "PUSH Day",
+      message: "Good recovery signals. You can train harder today with clean execution.",
+    };
+  }
+  if (mode === "RECOVERY") {
+    return {
+      tone: "warning",
+      title: "RECOVERY Day",
+      message: "Lower output today. Prioritize technique, lighter volume, and recovery habits.",
+    };
+  }
+  return {
+    tone: "normal",
+    title: "NORMAL Day",
+    message: "Stay consistent and complete your planned baseline work.",
+  };
+}
+
+export function getAICoachMessage({ mode, sleepHours, yesterdayWorkout, dietScore }) {
+  if (mode === "PUSH") {
+    return "Push harder today. Recovery signals are strong.";
+  }
+  if (mode === "RECOVERY") {
+    const reasons = [];
+    if (safeNumber(sleepHours, 0) > 0 && safeNumber(sleepHours, 0) < 6) {
+      reasons.push("sleep was low");
+    }
+    if (!yesterdayWorkout) {
+      reasons.push("yesterday was missed");
+    }
+    if (safeNumber(dietScore, 0) < 50) {
+      reasons.push("diet consistency is low");
+    }
+    const reasonText = reasons.length > 0 ? ` (${reasons.join(", ")})` : "";
+    return `Recover smart today${reasonText}.`;
+  }
+  return "Stay steady today. Clean reps and consistent habits win.";
+}
+
+export function getWorkoutNextSuggestion({ lastWorkout, plannedReps, missedYesterdayWorkout }) {
+  const baseReps = parseRepTarget(plannedReps, 8);
+  const lastReps = safeNumber(lastWorkout?.repsCompleted, baseReps);
+  const lastWeight = safeNumber(lastWorkout?.weightKg, 0);
+  const suggestedReps = Math.max(1, Math.round(lastReps + 1));
+  const suggestedWeight = lastWeight > 0 ? Number((lastWeight + 2.5).toFixed(1)) : null;
+  const intensityMessage = missedYesterdayWorkout ? "Reduce intensity by 10% today. " : "";
+
+  if (suggestedWeight) {
+    return `${intensityMessage}Next target: ${suggestedWeight}kg or ${suggestedReps} reps.`;
+  }
+  return `${intensityMessage}Next target: +1 rep (${suggestedReps} reps).`;
+}
+
+export function getActionableInsights({ sleepHours, streak, dietScore, completion }) {
+  const output = [];
+  const sleep = safeNumber(sleepHours, 0);
+  const consistency = safeNumber(completion, 0);
+
+  if (sleep > 0 && sleep < 6.5) {
+    output.push("Sleep is low. Cut volume by one set and finish before midnight.");
+  }
+  if (safeNumber(dietScore, 0) < 50) {
+    output.push("Diet score is low. Complete at least two core meals for recovery.");
+  }
+  if (safeNumber(streak, 0) <= 1 && consistency < 70) {
+    output.push("Consistency dipped. Lock one non-negotiable workout block today.");
+  }
+  if (output.length < 2 && consistency >= 80 && safeNumber(dietScore, 0) >= 67) {
+    output.push("Momentum is strong. Add one focused top set to your main lift.");
+  }
+  if (output.length === 0) {
+    output.push("Stay on baseline plan today and close all required tasks.");
+  }
+
+  return output.slice(0, 2);
+}
+
+export function getProgressPrediction({ consistencyPercent, dietScore, streak }) {
+  const consistency = safeNumber(consistencyPercent, 0);
+  const diet = safeNumber(dietScore, 0);
+  const streakDays = safeNumber(streak, 0);
+  const score = consistency * 0.5 + diet * 0.3 + Math.min(streakDays * 8, 20);
+  return score >= 65 ? "On track" : "Progress slow";
+}
+
+export function isDailyCompletionMet(log) {
+  const hasTraining = Boolean(log?.tasks?.workout || log?.tasks?.cardio || log?.tasks?.control);
+  const dietScore = getDietScoreFromLog(log);
+  return hasTraining && dietScore >= 50;
+}
+
+export function getCurrentStreak(dailyLogs, referenceDate = new Date()) {
+  let streak = 0;
+  for (let dayOffset = 0; dayOffset < 365; dayOffset += 1) {
+    const dateKey = formatDateKey(addDays(referenceDate, -dayOffset));
+    const log = dailyLogs?.[dateKey];
+    if (!isDailyCompletionMet(log)) {
+      break;
+    }
+    streak += 1;
+  }
+  return streak;
 }
 
 function previousDayOverloaded(previousDay, previousLog) {
@@ -494,21 +653,7 @@ export function getWeeklyMetrics({ referenceDate, weekPlan, dailyLogs, sessionLo
   const consistencyScore = clamp((workoutConsistency / 100) * 25, 0, 25);
   const recoveryScore = Math.round(clamp(sleepScore + completionScore + consistencyScore - missedWorkouts * 3, 0, 100));
 
-  const todayKey = formatDateKey(referenceDate);
-  let streak = 0;
-  const orderedKeys = Object.keys(dailyLogs).sort();
-  for (let index = orderedKeys.length - 1; index >= 0; index -= 1) {
-    const dateKey = orderedKeys[index];
-    if (dateKey > todayKey) {
-      continue;
-    }
-    const log = dailyLogs[dateKey];
-    const successful = Boolean(log?.tasks?.kegels) && (log?.tasks?.workout || log?.tasks?.cardio || log?.tasks?.control);
-    if (!successful) {
-      break;
-    }
-    streak += 1;
-  }
+  const streak = getCurrentStreak(dailyLogs, referenceDate);
 
   return {
     completionPercent,
@@ -553,8 +698,16 @@ export function getSmartInsights({ metrics, lastWeekMetrics, controlRecommendati
   return insights.slice(0, 4);
 }
 
-export function getSmartEngineOutput({ dailyLogs, sessionLogs, userSettings }) {
-  const referenceDate = new Date();
+export function getSmartEngineOutput({
+  dailyLogs,
+  sessionLogs,
+  userSettings,
+  referenceDate = new Date(),
+  adaptiveMode,
+  dietScore,
+  yesterdayWorkout,
+  proteinBoost = false,
+}) {
   const todayKey = formatDateKey(referenceDate);
   const recentWeekKeys = getRecentDateKeys(referenceDate, 7);
   const recentSleepKeys = getRecentDateKeys(referenceDate, 3);
@@ -593,9 +746,27 @@ export function getSmartEngineOutput({ dailyLogs, sessionLogs, userSettings }) {
   }
 
   const sleepHours = safeNumber(dailyLogs?.[todayKey]?.sleepHours, 0);
+  const yesterdayKey = formatDateKey(addDays(referenceDate, -1));
+  const resolvedDietScore = safeNumber(dietScore, getDietScoreFromLog(dailyLogs?.[todayKey]));
+  const resolvedYesterdayWorkout = Boolean(
+    yesterdayWorkout ?? dailyLogs?.[yesterdayKey]?.tasks?.workout ?? dailyLogs?.[yesterdayKey]?.tasks?.cardio,
+  );
+  const resolvedMode = adaptiveMode ?? getAdaptiveDayMode({
+    sleepHours,
+    yesterdayWorkout: resolvedYesterdayWorkout,
+    dietScore: resolvedDietScore,
+  });
+
+  if (resolvedMode === "RECOVERY") {
+    todayFocus = "recovery";
+  } else if (resolvedMode === "PUSH") {
+    todayFocus = "progressive_overload";
+  }
+
   const diet = generateDiet({
     todayFocus,
     sleepHours,
+    proteinBoost,
   });
 
   return {
@@ -664,6 +835,10 @@ export function normalizeDailyLogs(dailyLogs, createEmptyLog) {
         ...createEmptyLog().advanced,
         ...(value?.advanced ?? {}),
       },
+      diet: {
+        ...createEmptyLog().diet,
+        ...(value?.diet ?? {}),
+      },
       flags: {
         ...createEmptyLog().flags,
         ...(value?.flags ?? {}),
@@ -693,7 +868,7 @@ export function getTodayFocus({ todayPlan, controlRecommendation, weeklyMetrics,
   };
 }
 
-export function createSessionRecord({ dateKey, durationSec, completionPercent, setProgress, exercises }) {
+export function createSessionRecord({ dateKey, durationSec, completionPercent, setProgress, exercises, exercisePerformance }) {
   return {
     id: `session-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
     dateKey,
@@ -702,5 +877,6 @@ export function createSessionRecord({ dateKey, durationSec, completionPercent, s
     completionPercent,
     setProgress,
     exercises,
+    exercisePerformance: exercisePerformance ?? {},
   };
 }

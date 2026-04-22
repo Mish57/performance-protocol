@@ -6,7 +6,7 @@ function roundMacro(value) {
   return Math.round(value);
 }
 
-export function generateDiet({ todayFocus, sleepHours }) {
+export function generateDiet({ todayFocus, sleepHours, proteinBoost = false }) {
   const normalizedFocus = String(todayFocus ?? "").toLowerCase();
   const isRecovery = normalizedFocus.includes("recovery");
 
@@ -26,6 +26,11 @@ export function generateDiet({ todayFocus, sleepHours }) {
     calories = roundMacro(calories * 0.9);
     carbs = roundMacro(carbs * 0.85);
     fats = roundMacro(fats * 0.9);
+  }
+
+  if (proteinBoost) {
+    protein += 20;
+    calories += 80;
   }
 
   protein = clamp(roundMacro(protein), 120, 260);

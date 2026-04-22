@@ -12,12 +12,12 @@ export default function QuickLogCard({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
-    <section className="rounded-2xl border border-protocol-line bg-protocol-card p-5 shadow-card">
+    <section className="ui-card p-5">
       <h2 className="font-heading text-xl tracking-tight text-protocol-ink">Quick Log</h2>
       <p className="mt-1.5 text-sm text-protocol-muted">Fast inputs designed for under 10 seconds.</p>
 
       <div className="mt-4 space-y-3.5">
-        <label className="flex items-center justify-between rounded-xl border border-protocol-line bg-protocol-surface px-3 py-2.5">
+        <label className="flex items-center justify-between ui-surface px-3 py-2.5">
           <span className="text-sm font-semibold text-protocol-ink">Workout done</span>
           <input
             type="checkbox"
@@ -27,7 +27,7 @@ export default function QuickLogCard({
           />
         </label>
 
-        <div className="rounded-xl border border-protocol-line bg-protocol-surface px-3 py-3">
+        <div className="ui-surface px-3 py-3">
           <p className="mb-2 text-sm font-semibold text-protocol-ink">Sleep hours</p>
           <div className="grid grid-cols-4 gap-2">
             {QUICK_SLEEP_OPTIONS.map((hours) => {
@@ -37,9 +37,9 @@ export default function QuickLogCard({
                   key={hours}
                   type="button"
                   onClick={() => onSetSleep(hours)}
-                  className={`rounded-lg border px-2 py-2 text-xs font-semibold transition-colors ${
+                  className={`rounded-lg border px-2 py-2 text-xs font-semibold ${
                     selected
-                      ? "border-protocol-primary bg-protocol-primary text-white"
+                      ? "border-protocol-primaryStart bg-gradient-to-r from-protocol-primaryStart to-protocol-accentEmerald text-protocol-onAccent"
                       : "border-protocol-line bg-protocol-bgElevated text-protocol-muted hover:text-protocol-ink"
                   }`}
                 >
@@ -53,7 +53,7 @@ export default function QuickLogCard({
         <button
           type="button"
           onClick={() => setShowAdvanced((value) => !value)}
-          className="text-xs font-semibold uppercase tracking-wide text-protocol-primary"
+          className="inline-flex rounded-lg px-2 py-1 text-xs font-semibold uppercase tracking-wide text-protocol-primary hover:bg-protocol-accentSoft"
         >
           {showAdvanced ? "Hide advanced inputs" : "Show advanced inputs"}
         </button>

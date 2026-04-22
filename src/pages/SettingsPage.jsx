@@ -34,7 +34,7 @@ function permissionLabel(permission) {
 
 function ToggleRow({ label, checked, onChange }) {
   return (
-    <label className="flex items-center justify-between rounded-xl border border-protocol-line bg-protocol-surface px-3 py-2.5">
+    <label className="flex items-center justify-between ui-surface px-3 py-2.5">
       <span className="text-sm font-semibold text-protocol-ink">{label}</span>
       <input
         type="checkbox"
@@ -63,7 +63,7 @@ export default function SettingsPage() {
         <p className="mt-1 text-sm text-protocol-muted">Tune rules, plans, and notifications.</p>
       </section>
 
-      <section className="rounded-2xl border border-protocol-line bg-protocol-card p-5 shadow-card">
+      <section className="ui-card p-5">
         <h2 className="font-heading text-xl tracking-tight text-protocol-ink">General</h2>
         <div className="mt-4 space-y-3.5">
           <ToggleRow
@@ -82,13 +82,13 @@ export default function SettingsPage() {
               type="time"
               value={userSettings.sleepTarget}
               onChange={(event) => updateSettings("sleepTarget", event.target.value)}
-              className="w-full rounded-xl border border-protocol-line bg-protocol-bgElevated px-3 py-2 text-sm text-protocol-ink outline-none ring-protocol-primary focus:ring-2"
+              className="ui-input"
             />
           </label>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-protocol-line bg-protocol-card p-5 shadow-card">
+      <section className="ui-card p-5">
         <h2 className="font-heading text-xl tracking-tight text-protocol-ink">Workout Plan</h2>
         <div className="mt-4 space-y-3">
           <label className="block">
@@ -99,7 +99,7 @@ export default function SettingsPage() {
               max="6"
               value={userSettings.cardioFrequency}
               onChange={(event) => updateSettings("cardioFrequency", clampCardioFrequency(event.target.value))}
-              className="w-full rounded-xl border border-protocol-line bg-protocol-bgElevated px-3 py-2 text-sm text-protocol-ink outline-none ring-protocol-primary focus:ring-2"
+              className="ui-input"
             />
           </label>
           <Link to="/edit-workout" className="inline-block text-sm font-semibold text-protocol-primary">
@@ -108,7 +108,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-protocol-line bg-protocol-card p-5 shadow-card">
+      <section className="ui-card p-5">
         <h2 className="font-heading text-xl tracking-tight text-protocol-ink">Control Limits</h2>
         <div className="mt-4 space-y-3.5">
           <label className="block">
@@ -119,7 +119,7 @@ export default function SettingsPage() {
               max="4"
               value={userSettings.controlLimit}
               onChange={(event) => updateSettings("controlLimit", clampControlLimit(event.target.value))}
-              className="w-full rounded-xl border border-protocol-line bg-protocol-bgElevated px-3 py-2 text-sm text-protocol-ink outline-none ring-protocol-primary focus:ring-2"
+              className="ui-input"
             />
           </label>
           <div>
@@ -134,7 +134,7 @@ export default function SettingsPage() {
                     onClick={() => togglePreferredDay(item.day)}
                     className={`rounded-lg border px-2 py-2 text-xs font-semibold transition-colors ${
                       selected
-                        ? "border-protocol-primary bg-protocol-primary text-white"
+                        ? "border-protocol-primaryStart bg-gradient-to-r from-protocol-primaryStart to-protocol-accentEmerald text-protocol-onAccent"
                         : "border-protocol-line bg-protocol-surface text-protocol-muted hover:text-protocol-ink"
                     }`}
                   >
@@ -147,7 +147,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-protocol-line bg-protocol-card p-5 shadow-card">
+      <section className="ui-card p-5">
         <h2 className="font-heading text-xl tracking-tight text-protocol-ink">Notifications</h2>
         <p className="mt-1.5 text-sm text-protocol-muted">Permission: {permissionLabel(notificationPermission)}</p>
         <div className="mt-4 space-y-3.5">
@@ -159,7 +159,7 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={requestNotificationPermission}
-            className="w-full rounded-xl border border-protocol-line bg-protocol-bgElevated px-3 py-2 text-sm font-semibold text-protocol-ink"
+            className="btn-soft w-full"
           >
             Request notification permission
           </button>
@@ -169,7 +169,7 @@ export default function SettingsPage() {
               type="time"
               value={userSettings.kegelReminderTime}
               onChange={(event) => updateSettings("kegelReminderTime", event.target.value)}
-              className="w-full rounded-xl border border-protocol-line bg-protocol-bgElevated px-3 py-2 text-sm text-protocol-ink outline-none ring-protocol-primary focus:ring-2"
+              className="ui-input"
             />
           </label>
           <label className="block">
@@ -178,7 +178,7 @@ export default function SettingsPage() {
               type="time"
               value={userSettings.sleepReminderTime}
               onChange={(event) => updateSettings("sleepReminderTime", event.target.value)}
-              className="w-full rounded-xl border border-protocol-line bg-protocol-bgElevated px-3 py-2 text-sm text-protocol-ink outline-none ring-protocol-primary focus:ring-2"
+              className="ui-input"
             />
           </label>
         </div>

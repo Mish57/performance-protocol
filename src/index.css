@@ -3,47 +3,54 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f4f7f6;
-  --bg-elevated: #ffffff;
-  --surface: #eef3f1;
-  --card: #ffffff;
-  --ink: #132320;
-  --muted: #61756f;
-  --primary: #1f7f71;
-  --primary-soft: #d8efe8;
-  --line: #d5e3de;
-  --positive-bg: #ddf5e8;
-  --positive-ink: #1d774d;
-  --warning-bg: #fff0d9;
-  --warning-ink: #9a5e12;
-  --danger-bg: #fee4e2;
-  --danger-ink: #ae3535;
-  --neutral-bg: #e8efec;
-  --neutral-ink: #5e716b;
+  --bg-primary: #f2f7f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e8f1ed;
+  --accent: #22d3ee;
+  --accent-soft: #d7f8fd;
+  --accent-emerald: #10b981;
+  --text-primary: #132a24;
+  --text-secondary: #5f7770;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --on-accent: #ffffff;
+
+  --primary-start: #0d9488;
+  --primary-end: #10b981;
+  --border: rgba(17, 52, 45, 0.16);
+  --danger: #ef4444;
+  --neutral-soft: #e7efec;
+  --success-soft: #ddf7ef;
+  --warning-soft: #fff3df;
+  --danger-soft: #fee7e7;
 }
 
-.theme-dark {
-  --bg: #0f1615;
-  --bg-elevated: #17201d;
-  --surface: #1c2824;
-  --card: #1a2522;
-  --ink: #e5f1ed;
-  --muted: #9eb3ac;
-  --primary: #4dc3ab;
-  --primary-soft: #23413a;
-  --line: #304540;
-  --positive-bg: #1f3f33;
-  --positive-ink: #89dfae;
-  --warning-bg: #473824;
-  --warning-ink: #f0bf79;
-  --danger-bg: #452d30;
-  --danger-ink: #f4a4a4;
-  --neutral-bg: #25322f;
-  --neutral-ink: #b3c5be;
+.dark {
+  --bg-primary: #091210;
+  --bg-secondary: #10201c;
+  --bg-tertiary: #152a24;
+  --accent: #67e8f9;
+  --accent-soft: #14353b;
+  --accent-emerald: #34d399;
+  --text-primary: #e3f3ee;
+  --text-secondary: #9cb5ae;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --on-accent: #ffffff;
+
+  --primary-start: #14b8a6;
+  --primary-end: #10b981;
+  --border: rgba(111, 178, 160, 0.26);
+  --danger: #f87171;
+  --neutral-soft: #1b2d28;
+  --success-soft: #17352d;
+  --warning-soft: #3a311d;
+  --danger-soft: #3c2124;
 }
 
 * {
   box-sizing: border-box;
+  transition: all 0.25s ease;
 }
 
 html,
@@ -56,28 +63,67 @@ html {
   color-scheme: light;
 }
 
-html.theme-dark {
+html.dark {
   color-scheme: dark;
 }
 
 body {
   margin: 0;
   font-family: "Manrope", sans-serif;
-  color: var(--ink);
+  color: var(--text-primary);
   background:
-    radial-gradient(980px 560px at 0% -20%, #dff1ea 0%, transparent 70%),
-    radial-gradient(920px 520px at 100% -10%, #f7ecd9 0%, transparent 62%),
-    linear-gradient(180deg, #f8fbf9 0%, #edf4f1 100%);
-  transition: background 220ms ease, color 220ms ease;
+    radial-gradient(920px 560px at 0% -20%, #cceee8 0%, transparent 68%),
+    radial-gradient(900px 520px at 100% -10%, #d7f8fd 0%, transparent 62%),
+    linear-gradient(180deg, #f8fcfb 0%, #edf4f1 100%);
 }
 
-.theme-dark body {
+.dark body {
   background:
-    radial-gradient(980px 560px at 0% -20%, #1c2a27 0%, transparent 70%),
-    radial-gradient(920px 520px at 100% -10%, #322a1c 0%, transparent 62%),
-    linear-gradient(180deg, #0f1615 0%, #0b1110 100%);
+    radial-gradient(920px 560px at 0% -20%, #12302a 0%, transparent 68%),
+    radial-gradient(900px 520px at 100% -10%, #11333a 0%, transparent 62%),
+    linear-gradient(180deg, #091210 0%, #070d0c 100%);
 }
 
 input[type="range"] {
-  accent-color: var(--primary);
+  accent-color: var(--accent);
+}
+
+@layer components {
+  .ui-card {
+    @apply rounded-2xl border border-protocol-border/70 bg-protocol-bgSecondary shadow-md hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-xl;
+  }
+
+  .ui-surface {
+    @apply rounded-xl border border-protocol-border/60 bg-protocol-bgPrimary;
+  }
+
+  .ui-input {
+    @apply w-full rounded-xl border border-protocol-border/70 bg-protocol-bgSecondary px-3 py-2 text-sm text-protocol-textPrimary outline-none ring-protocol-accent focus:ring-2;
+  }
+
+  .btn-primary-gradient {
+    @apply rounded-xl bg-gradient-to-r from-protocol-primaryStart to-protocol-primaryEnd px-3 py-2 text-sm font-semibold text-protocol-onAccent shadow-md active:scale-95;
+  }
+
+  .btn-soft {
+    @apply rounded-xl border border-protocol-border/70 bg-protocol-bgSecondary px-3 py-2 text-sm font-semibold text-protocol-textPrimary shadow-sm active:scale-95;
+  }
+
+  .page-shell {
+    @apply animate-page-in;
+  }
+
+  .progress-fill {
+    @apply transition-[width] duration-500 ease-out;
+  }
+}
+
+@layer base {
+  button {
+    @apply active:scale-95;
+  }
+
+  a {
+    @apply transition-all duration-200;
+  }
 }

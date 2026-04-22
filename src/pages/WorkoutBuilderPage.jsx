@@ -117,7 +117,7 @@ export default function WorkoutBuilderPage() {
         <button
           type="button"
           onClick={addWorkoutDay}
-          className="rounded-xl border border-protocol-line bg-protocol-bgElevated px-3 py-2 text-xs font-semibold uppercase tracking-wide text-protocol-primary"
+          className="btn-soft text-xs uppercase tracking-wide text-protocol-primary"
         >
           Add Workout Day
         </button>
@@ -125,7 +125,7 @@ export default function WorkoutBuilderPage() {
 
       <section className="space-y-3.5">
         {draft.days.map((day) => (
-          <article key={day.dayNumber} className="rounded-2xl border border-protocol-line bg-protocol-card p-4 shadow-card">
+          <article key={day.dayNumber} className="ui-card p-4">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-protocol-muted">{DAY_LABELS[day.dayNumber - 1]}</p>
             <div className="mt-2.5 grid grid-cols-12 gap-2">
               <select
@@ -164,7 +164,7 @@ export default function WorkoutBuilderPage() {
             {day.type === "workout" ? (
               <div className="mt-3.5 space-y-2.5">
                 {day.exercises.map((exercise) => (
-                  <div key={exercise.id} className="rounded-xl border border-protocol-line bg-protocol-surface p-3">
+                  <div key={exercise.id} className="ui-surface p-3">
                     <div className="grid grid-cols-12 gap-2">
                       <input
                         value={exercise.name}
@@ -203,7 +203,7 @@ export default function WorkoutBuilderPage() {
                 <button
                   type="button"
                   onClick={() => addExercise(day.dayNumber)}
-                  className="w-full rounded-lg border border-dashed border-protocol-line bg-protocol-bgElevated px-3 py-2 text-sm font-semibold text-protocol-primary"
+                  className="w-full rounded-lg border border-dashed border-protocol-line bg-protocol-bgElevated px-3 py-2 text-sm font-semibold text-protocol-primary active:scale-95"
                 >
                   Add Exercise
                 </button>
@@ -217,21 +217,21 @@ export default function WorkoutBuilderPage() {
         <button
           type="button"
           onClick={saveDraft}
-          className="rounded-xl bg-protocol-primary px-3 py-2 text-sm font-semibold text-white"
+          className="btn-primary-gradient"
         >
           Save
         </button>
         <button
           type="button"
           onClick={resetDraft}
-          className="rounded-xl border border-protocol-line bg-protocol-bgElevated px-3 py-2 text-sm font-semibold text-protocol-ink"
+          className="btn-soft"
         >
           Reset
         </button>
         <button
           type="button"
           onClick={resetWorkoutPlans}
-          className="rounded-xl border border-protocol-line bg-protocol-bgElevated px-3 py-2 text-sm font-semibold text-protocol-dangerInk"
+          className="btn-soft text-protocol-dangerInk"
         >
           Default
         </button>

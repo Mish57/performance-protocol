@@ -16,10 +16,19 @@ import {
   getControlRecommendation,
   getLastWeekMetrics,
   getRelativeWeekSlice,
+  getAdaptiveBanner,
+  getAdaptiveDayMode,
+  getAICoachMessage,
+  getActionableInsights,
+  getCurrentStreak,
+  getDietFeedback,
+  getDietScoreFromLog,
+  getProgressPrediction,
   getSmartInsights,
   getTodayFocus,
   getTodayPlan,
   getTodayStatus,
+  getWorkoutNextSuggestion,
   getWeeklyMetrics,
   normalizeDailyLogs,
 } from "../lib/smartEngine";
@@ -89,6 +98,33 @@ function ensureTimerState(value) {
   };
 }
 
+function ensureExercisePerformance(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const normalized = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (!entry || typeof entry !== "object") {
+      continue;
+    }
+    normalized[key] = {
+      weightKg: Number.isFinite(Number(entry.weightKg)) ? Number(entry.weightKg) : null,
+      repsCompleted: Number.isFinite(Number(entry.repsCompleted)) ? Number(entry.repsCompleted) : null,
+      updatedAt: typeof entry.updatedAt === "string" ? entry.updatedAt : "",
+    };
+  }
+  return normalized;
+}
+
+function ensureWorkoutNudgeState(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { workout: "" };
+  }
+  return {
+    workout: typeof value.workout === "string" ? value.workout : "",
+  };
+}
+
 export function AppStateProvider({ children }) {
   const [now, setNow] = useState(new Date());
   const [userSettings, setUserSettings] = useLocalStorage("userSettings", createDefaultUserSettings, {
@@ -109,6 +145,12 @@ export function AppStateProvider({ children }) {
   const [workoutTimerState, setWorkoutTimerState] = useLocalStorage("workoutSessionTimer", ensureTimerState, {
     sanitize: ensureTimerState,
   });
+  const [exercisePerformance, setExercisePerformance] = useLocalStorage("exercisePerformance", {}, {
+    sanitize: ensureExercisePerformance,
+  });
+  const [workoutNudgeState, setWorkoutNudgeState] = useLocalStorage("workoutNudgeState", ensureWorkoutNudgeState, {
+    sanitize: ensureWorkoutNudgeState,
+  });
   const [notificationPermission, setNotificationPermission] = useState(() => {
     if (typeof window === "undefined" || !("Notification" in window)) {
       return "unsupported";
@@ -124,7 +166,7 @@ export function AppStateProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("theme-dark", Boolean(userSettings.darkMode));
+    document.documentElement.classList.toggle("dark", Boolean(userSettings.darkMode));
   }, [userSettings.darkMode]);
 
   const todayKey = formatDateKey(now);
@@ -144,6 +186,40 @@ export function AppStateProvider({ children }) {
   const todayPlan = useMemo(() => getTodayPlan(weekPlan, now), [weekPlan, now]);
   const todayLog = dailyLogs[todayKey] ?? createDefaultDailyLog();
   const previousLog = dailyLogs[yesterdayKey] ?? createDefaultDailyLog();
+  const yesterdayPlan = useMemo(() => weekPlan.days.find((day) => day.dateKey === yesterdayKey) ?? null, [weekPlan.days, yesterdayKey]);
+  const missedYesterdayWorkout = Boolean(yesterdayPlan?.type === "workout" && !previousLog.tasks?.workout);
+  const dietScore = useMemo(() => getDietScoreFromLog(todayLog), [todayLog]);
+  const yesterdayWorkout = useMemo(
+    () => Boolean(previousLog.tasks?.workout || previousLog.tasks?.cardio),
+    [previousLog.tasks?.cardio, previousLog.tasks?.workout],
+  );
+  const adaptiveMode = useMemo(
+    () =>
+      getAdaptiveDayMode({
+        sleepHours: todayLog.sleepHours,
+        yesterdayWorkout,
+        dietScore,
+      }),
+    [dietScore, todayLog.sleepHours, yesterdayWorkout],
+  );
+  const adaptiveBanner = useMemo(() => getAdaptiveBanner(adaptiveMode), [adaptiveMode]);
+  const aiCoachMessage = useMemo(
+    () =>
+      getAICoachMessage({
+        mode: adaptiveMode,
+        sleepHours: todayLog.sleepHours,
+        yesterdayWorkout,
+        dietScore,
+      }),
+    [adaptiveMode, dietScore, todayLog.sleepHours, yesterdayWorkout],
+  );
+  const dietFeedback = useMemo(() => getDietFeedback(dietScore), [dietScore]);
+  const streakCount = useMemo(() => getCurrentStreak(dailyLogs, now), [dailyLogs, now]);
+  const shouldBoostProteinTomorrow = useMemo(() => getDietScoreFromLog(previousLog) < 50, [previousLog]);
+  const showWorkoutNudge = useMemo(
+    () => workoutNudgeState.workout === todayKey && todayPlan?.type === "workout" && !todayLog.tasks?.workout,
+    [todayKey, todayLog.tasks?.workout, todayPlan?.type, workoutNudgeState.workout],
+  );
 
   const controlRecommendation = useMemo(
     () =>
@@ -187,6 +263,25 @@ export function AppStateProvider({ children }) {
         controlLimit: userSettings.controlLimit,
       }),
     [dailyLogs, now, sessionLogs, userSettings.controlLimit, weekPlan],
+  );
+  const actionableInsights = useMemo(
+    () =>
+      getActionableInsights({
+        sleepHours: todayLog.sleepHours,
+        streak: streakCount,
+        dietScore,
+        completion: todayStatus.completionPercent,
+      }),
+    [dietScore, streakCount, todayLog.sleepHours, todayStatus.completionPercent],
+  );
+  const progressPrediction = useMemo(
+    () =>
+      getProgressPrediction({
+        consistencyPercent: weeklyMetrics.workoutConsistency,
+        dietScore,
+        streak: streakCount,
+      }),
+    [dietScore, streakCount, weeklyMetrics.workoutConsistency],
   );
 
   const lastWeekMetrics = useMemo(
@@ -236,6 +331,10 @@ export function AppStateProvider({ children }) {
         advanced: {
           ...createDefaultDailyLog().advanced,
           ...(previous?.[dateKey]?.advanced ?? {}),
+        },
+        diet: {
+          ...createDefaultDailyLog().diet,
+          ...(previous?.[dateKey]?.diet ?? {}),
         },
         flags: {
           ...createDefaultDailyLog().flags,
@@ -289,6 +388,19 @@ export function AppStateProvider({ children }) {
     }));
   }
 
+  function toggleDietMeal(mealId, checked) {
+    if (!["breakfast", "lunch", "dinner"].includes(mealId)) {
+      return;
+    }
+    updateDailyLog(todayKey, (previous) => ({
+      ...previous,
+      diet: {
+        ...previous.diet,
+        [mealId]: Boolean(checked),
+      },
+    }));
+  }
+
   function updateSettings(field, value) {
     setUserSettings((previous) => ({
       ...ensureSettings(previous),
@@ -311,16 +423,39 @@ export function AppStateProvider({ children }) {
     setWorkoutPlans(createDefaultWorkoutPlans());
   }
 
-  function saveWorkoutSession({ durationSec, completionPercent, setProgress, exercises }) {
+  function saveWorkoutSession({ durationSec, completionPercent, setProgress, exercises, exercisePerformance: performanceInput }) {
     const record = createSessionRecord({
       dateKey: todayKey,
       durationSec,
       completionPercent,
       setProgress,
       exercises,
+      exercisePerformance: performanceInput,
     });
 
     setSessionLogs((previous) => [...(previous ?? []), record]);
+
+    setExercisePerformance((previous) => {
+      const next = { ...(previous ?? {}) };
+      for (const exercise of exercises ?? []) {
+        const key = String(exercise?.name ?? "").trim().toLowerCase();
+        if (!key) {
+          continue;
+        }
+        const input = performanceInput?.[exercise.id] ?? {};
+        const weight = Number(input.weightKg);
+        const reps = Number(input.repsCompleted);
+        if (!Number.isFinite(weight) && !Number.isFinite(reps)) {
+          continue;
+        }
+        next[key] = {
+          weightKg: Number.isFinite(weight) ? weight : previous?.[key]?.weightKg ?? null,
+          repsCompleted: Number.isFinite(reps) ? reps : previous?.[key]?.repsCompleted ?? null,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return next;
+    });
 
     updateDailyLog(todayKey, (previous) => ({
       ...previous,
@@ -333,6 +468,15 @@ export function AppStateProvider({ children }) {
         durationEstimate: String(Math.round(durationSec / 60)),
       },
     }));
+  }
+
+  function getExerciseSuggestion(exerciseName, plannedReps) {
+    const key = String(exerciseName ?? "").trim().toLowerCase();
+    return getWorkoutNextSuggestion({
+      lastWorkout: exercisePerformance?.[key],
+      plannedReps,
+      missedYesterdayWorkout,
+    });
   }
 
   async function requestNotificationPermission() {
@@ -362,6 +506,44 @@ export function AppStateProvider({ children }) {
     setLastNotified,
   });
 
+  useEffect(() => {
+    const hour = now.getHours();
+    const shouldTrigger =
+      hour >= 18 &&
+      todayPlan?.type === "workout" &&
+      !todayLog.tasks?.workout &&
+      workoutNudgeState.workout !== todayKey;
+
+    if (!shouldTrigger) {
+      return;
+    }
+
+    setWorkoutNudgeState((previous) => ({
+      ...(previous ?? { workout: "" }),
+      workout: todayKey,
+    }));
+
+    if (
+      userSettings.notificationsEnabled &&
+      notificationPermission === "granted" &&
+      typeof window !== "undefined" &&
+      "Notification" in window
+    ) {
+      new Notification("Workout reminder", {
+        body: "No workout logged yet. Start a short session now to protect your streak.",
+      });
+    }
+  }, [
+    notificationPermission,
+    now,
+    setWorkoutNudgeState,
+    todayKey,
+    todayLog.tasks?.workout,
+    todayPlan?.type,
+    userSettings.notificationsEnabled,
+    workoutNudgeState.workout,
+  ]);
+
   const value = {
     now,
     todayKey,
@@ -377,14 +559,27 @@ export function AppStateProvider({ children }) {
     todayTasks,
     todayStatus,
     todayFocus,
+    missedYesterdayWorkout,
     controlRecommendation,
     weeklyMetrics,
     lastWeekMetrics,
     insights,
+    actionableInsights,
+    progressPrediction,
+    dietScore,
+    dietFeedback,
+    adaptiveMode,
+    adaptiveBanner,
+    aiCoachMessage,
+    streakCount,
+    shouldBoostProteinTomorrow,
+    showWorkoutNudge,
+    getExerciseSuggestion,
     notificationPermission,
     toggleTodayTask,
     setTodaySleepHours,
     setAdvancedTodayField,
+    toggleDietMeal,
     updateSettings,
     patchSettings,
     saveWorkoutPlans,

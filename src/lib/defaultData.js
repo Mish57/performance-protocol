@@ -132,6 +132,11 @@ export function createDefaultWorkoutPlans() {
 export function createDefaultDailyLog() {
   return {
     sleepHours: null,
+    diet: {
+      breakfast: false,
+      lunch: false,
+      dinner: false,
+    },
     tasks: {
       workout: false,
       cardio: false,

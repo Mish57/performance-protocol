@@ -22,8 +22,20 @@ function calculateCompletion(setProgress) {
   return Math.round((completed / allSets.length) * 100);
 }
 
+function createPerformanceInputs(exercises) {
+  const initial = {};
+  for (const exercise of exercises) {
+    const repsMatch = String(exercise.reps ?? "").match(/\d+/);
+    initial[exercise.id] = {
+      weightKg: "",
+      repsCompleted: repsMatch ? repsMatch[0] : "",
+    };
+  }
+  return initial;
+}
+
 export default function WorkoutSessionPage() {
-  const { todayPlan, saveWorkoutSession, weeklyMetrics } = useAppState();
+  const { todayPlan, saveWorkoutSession, weeklyMetrics, userSettings, getExerciseSuggestion, missedYesterdayWorkout } = useAppState();
   const exercises = todayPlan?.type === "workout" ? todayPlan.exercises : [];
   const planIdentity = `${todayPlan?.dateKey ?? "none"}:${todayPlan?.name ?? "workout"}:${exercises.length}`;
   const timerStorageKey = `workoutSessionTimer:${todayPlan?.dateKey ?? "none"}:${todayPlan?.name ?? "workout"}`;
@@ -32,6 +44,7 @@ export default function WorkoutSessionPage() {
   const [saved, setSaved] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
   const [finalDurationSec, setFinalDurationSec] = useState(null);
+  const [exercisePerformance, setExercisePerformance] = useState(() => createPerformanceInputs(exercises));
   const previousPlanKeyRef = useRef(planIdentity);
 
   useEffect(() => {
@@ -40,6 +53,7 @@ export default function WorkoutSessionPage() {
 
     if (currentPlanKey !== previousPlanKey) {
       setSetProgress(createSetProgress(exercises));
+      setExercisePerformance(createPerformanceInputs(exercises));
       setSaved(false);
       setSessionEnded(false);
       setFinalDurationSec(null);
@@ -97,6 +111,7 @@ export default function WorkoutSessionPage() {
       completionPercent,
       setProgress,
       exercises,
+      exercisePerformance,
     });
     setSaved(true);
     timer.reset();
@@ -110,7 +125,7 @@ export default function WorkoutSessionPage() {
           <p className="mt-1 text-sm text-protocol-muted">No workout scheduled for today.</p>
         </section>
 
-        <section className="rounded-2xl border border-protocol-line bg-protocol-card p-5 shadow-card">
+        <section className="ui-card p-5">
           <p className="text-sm text-protocol-muted">Use recovery/cardio today or edit your split.</p>
           <Link to="/edit-workout" className="mt-3 inline-block text-sm font-semibold text-protocol-primary">
             Open Workout Builder
@@ -124,33 +139,42 @@ export default function WorkoutSessionPage() {
     <div className="space-y-5">
       <section className="flex items-start justify-between gap-3">
         <h1 className="font-heading text-3xl tracking-tight text-protocol-ink">Workout Session</h1>
-        <Link to="/edit-workout" className="text-xs font-semibold uppercase tracking-wide text-protocol-primary">
-          Edit workout
-        </Link>
+        {!userSettings.focusMode ? (
+          <Link to="/edit-workout" className="text-xs font-semibold uppercase tracking-wide text-protocol-primary">
+            Edit workout
+          </Link>
+        ) : null}
       </section>
       <p className="-mt-3 text-sm text-protocol-muted">{todayPlan.name}</p>
+      {missedYesterdayWorkout ? (
+        <p className="ui-surface px-3 py-2 text-xs font-semibold text-protocol-warningInk">
+          Missed yesterday: reduce intensity by 10% today.
+        </p>
+      ) : null}
 
-      <section className="rounded-2xl border border-protocol-line bg-protocol-card p-5 shadow-card">
-        <div className="grid grid-cols-3 gap-2.5">
-          <div className="rounded-xl border border-protocol-line bg-protocol-surface p-3">
+      <section className="ui-card p-5">
+        <div className={`grid gap-2.5 ${userSettings.focusMode ? "grid-cols-2" : "grid-cols-3"}`}>
+          <div className="ui-surface p-3">
             <p className="text-xs uppercase tracking-wide text-protocol-muted">Timer</p>
             <p className="mt-1 font-heading text-xl tracking-tight text-protocol-ink">{formatDuration(elapsedSec)}</p>
           </div>
-          <div className="rounded-xl border border-protocol-line bg-protocol-surface p-3">
+          <div className="ui-surface p-3">
             <p className="text-xs uppercase tracking-wide text-protocol-muted">Completion</p>
             <p className="mt-1 font-heading text-xl tracking-tight text-protocol-ink">{completionPercent}%</p>
           </div>
-          <div className="rounded-xl border border-protocol-line bg-protocol-surface p-3">
-            <p className="text-xs uppercase tracking-wide text-protocol-muted">This week</p>
-            <p className="mt-1 font-heading text-xl tracking-tight text-protocol-ink">{totalWeeklyTime}h</p>
-          </div>
+          {!userSettings.focusMode ? (
+            <div className="ui-surface p-3">
+              <p className="text-xs uppercase tracking-wide text-protocol-muted">This week</p>
+              <p className="mt-1 font-heading text-xl tracking-tight text-protocol-ink">{totalWeeklyTime}h</p>
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-3.5 flex gap-2">
           <button
             type="button"
             onClick={startSession}
-            className="flex-1 rounded-xl bg-protocol-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="btn-primary-gradient flex-1 disabled:opacity-50"
             disabled={sessionState === "running" || sessionState === "ended"}
           >
             {sessionState === "paused" ? "Resume" : "Start"}
@@ -158,7 +182,7 @@ export default function WorkoutSessionPage() {
           <button
             type="button"
             onClick={pauseSession}
-            className="flex-1 rounded-xl border border-protocol-line bg-protocol-bgElevated px-3 py-2 text-sm font-semibold text-protocol-ink disabled:opacity-50"
+            className="btn-soft flex-1 disabled:opacity-50"
             disabled={sessionState !== "running"}
           >
             Pause
@@ -166,7 +190,7 @@ export default function WorkoutSessionPage() {
           <button
             type="button"
             onClick={endSession}
-            className="flex-1 rounded-xl border border-protocol-line bg-protocol-bgElevated px-3 py-2 text-sm font-semibold text-protocol-ink disabled:opacity-50"
+            className="btn-soft flex-1 disabled:opacity-50"
             disabled={sessionState === "idle" || sessionState === "ended"}
           >
             End
@@ -176,7 +200,7 @@ export default function WorkoutSessionPage() {
 
       <section className="space-y-3.5">
         {exercises.map((exercise) => (
-          <article key={exercise.id} className="rounded-2xl border border-protocol-line bg-protocol-card p-4 shadow-card">
+          <article key={exercise.id} className="ui-card p-4">
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-heading text-base tracking-tight text-protocol-ink">{exercise.name}</h3>
               <p className="text-xs text-protocol-muted">
@@ -184,6 +208,49 @@ export default function WorkoutSessionPage() {
               </p>
             </div>
             {exercise.notes ? <p className="mt-1.5 text-xs text-protocol-muted">{exercise.notes}</p> : null}
+            {!userSettings.focusMode ? (
+              <>
+                <p className="mt-2 text-xs font-semibold text-protocol-primary">
+                  {getExerciseSuggestion(exercise.name, exercise.reps)}
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={exercisePerformance[exercise.id]?.weightKg ?? ""}
+                    onChange={(event) =>
+                      setExercisePerformance((previous) => ({
+                        ...previous,
+                        [exercise.id]: {
+                          ...(previous[exercise.id] ?? {}),
+                          weightKg: event.target.value,
+                        },
+                      }))
+                    }
+                    placeholder="Weight (kg)"
+                    className="ui-input"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={exercisePerformance[exercise.id]?.repsCompleted ?? ""}
+                    onChange={(event) =>
+                      setExercisePerformance((previous) => ({
+                        ...previous,
+                        [exercise.id]: {
+                          ...(previous[exercise.id] ?? {}),
+                          repsCompleted: event.target.value,
+                        },
+                      }))
+                    }
+                    placeholder="Reps done"
+                    className="ui-input"
+                  />
+                </div>
+              </>
+            ) : null}
             <div className="mt-3 flex flex-wrap gap-2">
               {(setProgress[exercise.id] ?? []).map((checked, index) => (
                 <button

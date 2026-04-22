@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import BottomNav from "./BottomNav";
+import QuickActionFab from "./QuickActionFab";
 import { useAppState } from "../state/AppState";
 
 export default function MobileLayout() {
@@ -16,8 +17,11 @@ export default function MobileLayout() {
         </header>
       ) : null}
       <main className="mx-auto w-full max-w-xl px-4 pb-28 pt-6">
-        <Outlet />
+        <div className="page-shell">
+          <Outlet />
+        </div>
       </main>
+      <QuickActionFab />
       <BottomNav />
     </div>
   );

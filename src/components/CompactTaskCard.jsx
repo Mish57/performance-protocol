@@ -17,7 +17,7 @@ export default function CompactTaskCard({ task, onToggle }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <article className={`rounded-2xl border bg-protocol-card p-4 shadow-card ${taskAccent(task.status)}`}>
+    <article className={`ui-card p-4 ${taskAccent(task.status)}`}>
       <div className="flex items-start gap-3">
         <input
           type="checkbox"
@@ -41,7 +41,7 @@ export default function CompactTaskCard({ task, onToggle }) {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="mt-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-protocol-primary"
+        className="mt-3 inline-flex items-center gap-2 rounded-lg px-2 py-1 text-xs font-semibold uppercase tracking-wide text-protocol-primary hover:bg-protocol-accentSoft"
       >
         <span>{open ? "Hide details" : "Expand"}</span>
         <span className={`transition-transform ${open ? "rotate-180" : ""}`}>v</span>
@@ -50,7 +50,7 @@ export default function CompactTaskCard({ task, onToggle }) {
       {open ? (
         <ul className="mt-2.5 space-y-1.5">
           {task.details.map((line) => (
-            <li key={line} className="rounded-xl border border-protocol-line bg-protocol-surface px-3 py-2 text-sm text-protocol-ink">
+            <li key={line} className="ui-surface px-3 py-2 text-sm text-protocol-ink">
               {line}
             </li>
           ))}

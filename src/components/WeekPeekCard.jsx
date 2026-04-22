@@ -13,7 +13,7 @@ function statusClass(status) {
 
 function WeekRow({ day }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-protocol-line bg-protocol-surface px-3 py-2.5">
+    <div className="flex items-center justify-between ui-surface px-3 py-2.5">
       <div>
         <p className="text-sm font-semibold text-protocol-ink">{day.label}</p>
         <p className="text-xs text-protocol-muted">{day.name}</p>
@@ -27,7 +27,7 @@ function WeekRow({ day }) {
 
 export default function WeekPeekCard({ weekSlice }) {
   return (
-    <section className="rounded-2xl border border-protocol-line bg-protocol-card p-5 shadow-card">
+    <section className="ui-card p-5">
       <h2 className="font-heading text-xl tracking-tight text-protocol-ink">Week View</h2>
       <p className="mt-1.5 text-sm text-protocol-muted">Yesterday, today, tomorrow first. Full week on demand.</p>
 
