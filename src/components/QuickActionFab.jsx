@@ -19,7 +19,7 @@ export default function QuickActionFab() {
             to={action.to}
             onClick={() => setOpen(false)}
             className={[
-              "rounded-full border border-protocol-border/70 bg-protocol-bgSecondary px-3 py-2 text-xs font-semibold text-protocol-textPrimary shadow-md",
+              "rounded-full border border-protocol-border bg-protocol-bgSecondary px-3 py-2 text-xs font-semibold text-protocol-textPrimary shadow-md",
               "origin-bottom-right active:scale-95",
               open
                 ? "pointer-events-auto translate-y-0 opacity-100"
@@ -43,4 +43,3 @@ export default function QuickActionFab() {
     </div>
   );
 }
-

@@ -3,9 +3,9 @@ import { useAppState } from "../state/AppState";
 function StatCard({ label, value, tone = "default" }) {
   const toneClass =
     tone === "good"
-      ? "border-protocol-positiveBg/70 bg-protocol-positiveBg"
+      ? "border-protocol-positiveBg bg-protocol-positiveBg"
       : tone === "adjusted"
-        ? "border-protocol-warningBg/70 bg-protocol-warningBg"
+        ? "border-protocol-warningBg bg-protocol-warningBg"
         : "border-protocol-line bg-protocol-surface";
 
   return (

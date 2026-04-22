@@ -11,14 +11,14 @@ function linkClassName(isActive) {
   return [
     "relative flex-1 rounded-xl px-2 py-2.5 text-center text-xs font-semibold tracking-wide transition-all duration-200 active:scale-95",
     isActive
-      ? "bg-gradient-to-r from-protocol-primaryStart/20 to-protocol-accent/20 text-protocol-textPrimary shadow-sm"
+      ? "bg-gradient-to-r from-protocol-primarySoft to-protocol-accentSoft text-protocol-textPrimary shadow-sm"
       : "text-protocol-muted hover:bg-protocol-surface hover:text-protocol-ink",
   ].join(" ");
 }
 
 export default function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-protocol-line bg-protocol-bg/95 px-4 py-3 backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-protocol-line bg-protocol-bg px-4 py-3 backdrop-blur">
       <div className="mx-auto w-full max-w-xl rounded-2xl border border-protocol-line bg-protocol-card p-1 shadow-lg">
         <div className="flex gap-1">
           {NAV_ITEMS.map((item) => (
